@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Neon Garage",
+  "version": "1.0.0",
+  "description": "Open a new tab into your luxury sci-fi supercar garage. Collect cars, customize, diagnose, and explore holographic blueprints — all offline.",
+  "chrome_url_overrides": {
+    "newtab": "newtab/newtab.html"
+  },
+  "permissions": ["storage"],
+  "icons": {
+    "16": "assets/icons/icon16.png",
+    "48": "assets/icons/icon48.png",
+    "128": "assets/icons/icon128.png"
+  }
+}

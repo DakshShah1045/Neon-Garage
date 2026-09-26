@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neon Garage</title>
+  <link rel="stylesheet" href="newtab.css" />
+</head>
+<body data-env="midnight" data-time="night" data-engine="off" data-mode="garage">
+  <!-- Atmospheric layers -->
+  <div class="garage-bg" id="garageBg" aria-hidden="true">
+    <div class="bg-gradient"></div>
+    <div class="bg-room" id="bgRoom"></div>
+    <div class="bg-architecture"></div>
+    <div class="bg-walls">
+      <span class="wall wall-l"></span>
+      <span class="wall wall-r"></span>
+      <span class="wall-led led-l"></span>
+      <span class="wall-led led-r"></span>
+    </div>
+    <div class="bg-windows" id="bgWindows">
+      <div class="window-scene" id="windowScene"></div>
+    </div>
+    <div class="bg-haze" id="bgHaze"></div>
+    <div class="bg-floor">
+      <div class="floor-grid"></div>
+      <div class="floor-reflect"></div>
+      <div class="floor-wet" id="floorWet"></div>
+    </div>
+    <div class="spotlights">
+      <span class="spot spot-l"></span>
+      <span class="spot spot-c"></span>
+      <span class="spot spot-r"></span>
+    </div>
+    <div class="env-fx" id="envFx" aria-hidden="true">
+      <div class="fx-layer fx-stars"></div>
+      <div class="fx-layer fx-nebula"></div>
+      <div class="fx-layer fx-aurora"></div>
+      <div class="fx-layer fx-meteors"></div>
+      <div class="fx-layer fx-heat"></div>
+      <div class="fx-layer fx-dust"></div>
+      <div class="fx-layer fx-city-glow"></div>
+      <div class="fx-layer fx-traffic"></div>
+      <div class="fx-layer fx-rain-glass"></div>
+      <div class="fx-layer fx-lightning"></div>
+      <div class="fx-layer fx-midnight-rays"></div>
+    </div>
+    <div class="scan-beam" id="scanBeam"></div>
+    <canvas id="particles" class="particles" aria-hidden="true"></canvas>
+    <canvas id="weatherCanvas" class="weather-canvas" aria-hidden="true"></canvas>
+    <div class="weather" id="weather" aria-hidden="true"></div>
+  </div>
+
+  <!-- Top HUD bar -->
+  <header class="top-hud">
+    <button class="logo-btn" id="logoBtn" title="Neon Garage" aria-label="Neon Garage logo">
+      <svg class="logo-mark" viewBox="0 0 40 40" aria-hidden="true">
+        <path d="M8 28 L20 8 L32 28 Z" fill="none" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M14 28 L20 16 L26 28" fill="none" stroke="currentColor" stroke-width="1"/>
+        <circle cx="20" cy="24" r="2" fill="currentColor"/>
+      </svg>
+      <span class="logo-text">NEON GARAGE</span>
+    </button>
+
+    <div class="clock-block" id="clockBlock">
+      <div class="clock-time" id="clockTime">00:00</div>
+      <div class="clock-meta">
+        <span id="clockDay">MONDAY</span>
+        <span class="dot">·</span>
+        <span id="clockDate">JAN 01</span>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <button class="hud-chip" id="btnStartEngine" type="button">
+        <span class="chip-dot"></span>
+        START ENGINE
+      </button>
+      <button class="icon-btn" id="btnPanel" type="button" aria-label="Open control panel" title="Control Panel">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="4" width="7" height="7" rx="1"/><rect x="14" y="4" width="7" height="7" rx="1"/>
+          <rect x="3" y="13" width="7" height="7" rx="1"/><rect x="14" y="13" width="7" height="7" rx="1"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main stage -->
+  <main class="stage" id="stage">
+    <!-- Left HUD -->
+    <aside class="hud-panel hud-left" id="hudLeft">
+      <div class="hud-label">VEHICLE</div>
+      <h1 class="car-name" id="carName">Apex X1</h1>
+      <div class="car-class" id="carClass">Hyper GT</div>
+      <div class="stat-grid" id="statGrid">
+        <!-- filled by JS -->
+      </div>
+    </aside>
+
+    <!-- Hero car -->
+    <section class="hero" id="hero" aria-label="Hero vehicle presentation">
+      <div class="hero-glow" id="heroGlow"></div>
+      <div class="car-stage" id="carStage">
+        <div class="car-rotate" id="carRotate">
+          <div class="car-visual" id="carVisual" data-paint="black" data-wheels="aero" data-lights="standard">
+            <!-- SVG car injected by JS -->
+          </div>
+          <div class="car-shadow"></div>
+          <div class="car-reflection" id="carReflection"></div>
+        </div>
+        <div class="scan-overlay" id="scanOverlay" hidden></div>
+        <div class="blueprint-overlay" id="blueprintOverlay" hidden>
+          <div class="bp-labels" id="bpLabels"></div>
+        </div>
+      </div>
+      <p class="hint" id="interactionHint">Drag to rotate · Hover headlights</p>
+    </section>
+
+    <!-- Right system status -->
+    <aside class="hud-panel hud-right" id="hudRight">
+      <div class="hud-label">SYSTEM STATUS</div>
+      <ul class="sys-list" id="sysList">
+        <li><span>ENGINE</span><span class="sys-val" data-sys="engine">STANDBY</span></li>
+        <li><span>BATTERY</span><span class="sys-val" data-sys="battery">98%</span></li>
+        <li><span>TEMP</span><span class="sys-val" data-sys="temp">NORMAL</span></li>
+        <li><span>TRACTION</span><span class="sys-val" data-sys="traction">ACTIVE</span></li>
+        <li><span>AERODYNAMICS</span><span class="sys-val" data-sys="aero">READY</span></li>
+      </ul>
+      <div class="scan-line-hud" aria-hidden="true"></div>
+    </aside>
+  </main>
+
+  <!-- Diagnostics toast / sequence -->
+  <div class="diag-panel" id="diagPanel" hidden>
+    <div class="diag-title">SCANNING VEHICLE...</div>
+    <ul class="diag-list" id="diagList"></ul>
+    <div class="diag-result" id="diagResult"></div>
+  </div>
+
+  <!-- Control Panel -->
+  <aside class="control-panel" id="controlPanel" aria-hidden="true">
+    <div class="panel-header">
+      <span>GARAGE CONTROL</span>
+      <button class="icon-btn" id="btnClosePanel" type="button" aria-label="Close panel">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.5">
+          <path d="M6 6l12 12M18 6L6 18"/>
+        </svg>
+      </button>
+    </div>
+
+    <nav class="panel-nav" id="panelNav">
+      <button class="nav-item active" data-view="vehicles">Vehicles</button>
+      <button class="nav-item" data-view="customize">Customize</button>
+      <button class="nav-item" data-view="environment">Environment</button>
+      <button class="nav-item" data-view="diagnostics">Diagnostics</button>
+      <button class="nav-item" data-view="blueprint">Blueprint</button>
+      <button class="nav-item" data-view="lighting">Lighting</button>
+      <button class="nav-item" data-view="settings">Settings</button>
+    </nav>
+
+    <div class="panel-views">
+      <!-- Vehicles / Dream Garage -->
+      <div class="panel-view active" data-view="vehicles" id="viewVehicles">
+        <div class="view-actions">
+          <button class="ghost-btn" id="btnAddCar" type="button">+ Add to Garage</button>
+          <button class="ghost-btn" id="btnFavorite" type="button">★ Favorite</button>
+        </div>
+        <div class="car-collection" id="carCollection"></div>
+        <div class="profile-card" id="profileCard">
+          <h3 id="profileName">—</h3>
+          <p class="profile-cat" id="profileCat"></p>
+          <p class="profile-desc" id="profileDesc"></p>
+          <ul class="profile-features" id="profileFeatures"></ul>
+        </div>
+      </div>
+
+      <!-- Customize -->
+      <div class="panel-view" data-view="customize" id="viewCustomize">
+        <fieldset class="field">
+          <legend>Paint</legend>
+          <div class="swatches" id="paintSwatches">
+            <button type="button" class="swatch" data-paint="black" style="--c:#0a0a0c" title="Black"></button>
+            <button type="button" class="swatch" data-paint="silver" style="--c:#a8b0bc" title="Silver"></button>
+            <button type="button" class="swatch" data-paint="white" style="--c:#e8ecef" title="White"></button>
+            <button type="button" class="swatch" data-paint="blue" style="--c:#1a5cff" title="Blue"></button>
+            <button type="button" class="swatch" data-paint="red" style="--c:#c41e3a" title="Red"></button>
+          </div>
+          <label class="custom-color">
+            Custom
+            <input type="color" id="customPaint" value="#1a1a1e" />
+          </label>
+        </fieldset>
+        <fieldset class="field">
+          <legend>Wheels</legend>
+          <div class="option-row" id="wheelOptions">
+            <button type="button" class="opt-btn" data-wheels="aero">Aero</button>
+            <button type="button" class="opt-btn" data-wheels="spoke">Spoke</button>
+            <button type="button" class="opt-btn" data-wheels="mesh">Mesh</button>
+            <button type="button" class="opt-btn" data-wheels="turbine">Turbine</button>
+          </div>
+        </fieldset>
+        <fieldset class="field">
+          <legend>Headlights</legend>
+          <div class="option-row" id="lightOptions">
+            <button type="button" class="opt-btn" data-lights="standard">Standard</button>
+            <button type="button" class="opt-btn" data-lights="laser">Laser</button>
+            <button type="button" class="opt-btn" data-lights="matrix">Matrix</button>
+          </div>
+          <label class="slider-label">
+            Intensity
+            <input type="range" id="lightIntensity" min="0.4" max="1.6" step="0.05" value="1" />
+          </label>
+        </fieldset>
+        <fieldset class="field">
+          <legend>Accent Lighting</legend>
+          <input type="color" id="accentColor" value="#3ecfff" />
+        </fieldset>
+      </div>
+
+      <!-- Environment -->
+      <div class="panel-view" data-view="environment" id="viewEnvironment">
+        <div class="env-grid" id="envGrid">
+          <button type="button" class="env-card" data-env="midnight">
+            <span class="env-preview midnight"></span>
+            <span>Midnight Garage</span>
+          </button>
+          <button type="button" class="env-card" data-env="neon-city">
+            <span class="env-preview neon-city"></span>
+            <span>Neon City</span>
+          </button>
+          <button type="button" class="env-card" data-env="space">
+            <span class="env-preview space"></span>
+            <span>Space Hangar</span>
+          </button>
+          <button type="button" class="env-card" data-env="desert">
+            <span class="env-preview desert"></span>
+            <span>Desert Hangar</span>
+          </button>
+          <button type="button" class="env-card" data-env="rain">
+            <span class="env-preview rain"></span>
+            <span>Rain Garage</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Diagnostics -->
+      <div class="panel-view" data-view="diagnostics" id="viewDiagnostics">
+        <p class="view-blurb">Run a full holographic vehicle scan.</p>
+        <button class="primary-btn" id="btnRunDiag" type="button">RUN DIAGNOSTICS</button>
+      </div>
+
+      <!-- Blueprint -->
+      <div class="panel-view" data-view="blueprint" id="viewBlueprint">
+        <p class="view-blurb">Toggle holographic technical blueprint mode.</p>
+        <button class="primary-btn" id="btnBlueprint" type="button">HOLOGRAPHIC BLUEPRINT</button>
+      </div>
+
+      <!-- Lighting -->
+      <div class="panel-view" data-view="lighting" id="viewLighting">
+        <label class="slider-label">
+          Ambient
+          <input type="range" id="ambientLight" min="0.5" max="1.4" step="0.05" value="1" />
+        </label>
+        <label class="slider-label">
+          Spotlight
+          <input type="range" id="spotLight" min="0.4" max="1.5" step="0.05" value="1" />
+        </label>
+        <button class="ghost-btn" id="btnAutoTime" type="button">Sync with time of day</button>
+      </div>
+
+      <!-- Settings -->
+      <div class="panel-view" data-view="settings" id="viewSettings">
+        <label class="toggle-row">
+          <span>Sound effects</span>
+          <input type="checkbox" id="setSound" checked />
+        </label>
+        <label class="slider-label">
+          Volume
+          <input type="range" id="setVolume" min="0" max="1" step="0.05" value="0.35" />
+        </label>
+        <label class="toggle-row">
+          <span>Environment ambience</span>
+          <input type="checkbox" id="setAmbience" checked />
+        </label>
+        <label class="toggle-row">
+          <span>Particles</span>
+          <input type="checkbox" id="setParticles" checked />
+        </label>
+        <label class="toggle-row">
+          <span>Weather effects</span>
+          <input type="checkbox" id="setWeather" checked />
+        </label>
+        <label class="toggle-row">
+          <span>Reduced motion</span>
+          <input type="checkbox" id="setReducedMotion" />
+        </label>
+        <label class="toggle-row">
+          <span>Show interaction hints</span>
+          <input type="checkbox" id="setHints" checked />
+        </label>
+        <button class="ghost-btn danger" id="btnReset" type="button">Reset garage data</button>
+        <p class="privacy-note">Offline · Local storage only · No tracking · Procedural audio</p>
+      </div>
+    </div>
+  </aside>
+  <div class="panel-backdrop" id="panelBackdrop" hidden></div>
+
+  <!-- Secret / developer toast -->
+  <div class="toast" id="toast" hidden></div>
+
+  <!-- Navigation Touch Screen Dashboard -->
+  <footer class="nav-dashboard" id="navDashboard">
+    <div class="nav-header">
+      <span class="nh-title">WHERE TO?</span>
+      <span class="nh-sub">SELECT DESTINATION</span>
+    </div>
+    
+    <div class="nav-grid">
+      <button class="nav-btn" data-url="https://youtube.com" title="YouTube">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path>
+          <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>
+        </svg>
+        <span>YOUTUBE</span>
+      </button>
+      
+      <button class="nav-btn" data-url="https://chatgpt.com" title="ChatGPT">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M12 2a10 10 0 1 0 10 10H12V2Z"></path>
+          <path d="M12 12 2.1 7.1"></path>
+          <path d="m12 12 9.9 4.9"></path>
+        </svg>
+        <span>CHATGPT</span>
+      </button>
+
+      <button class="nav-btn" data-url="https://mail.google.com" title="Mail">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+          <polyline points="22,6 12,13 2,6"></polyline>
+        </svg>
+        <span>MAIL</span>
+      </button>
+
+      <!-- Custom Links Container -->
+      <div id="customLinksContainer" style="display: flex; gap: 0.6rem;"></div>
+
+      <button class="nav-btn" id="btnAddLinkItem" title="Add Shortcut">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <span>ADD</span>
+      </button>
+    </div>
+  </footer>
+
+  <!-- Add Link Modal -->
+  <div class="link-modal" id="linkModal" hidden>
+    <div class="lm-content">
+      <h3 class="lm-title">NEW DESTINATION</h3>
+      <input type="text" id="lmName" class="lm-input" placeholder="DESTINATION NAME" maxlength="12">
+      <input type="url" id="lmUrl" class="lm-input" placeholder="https://..." >
+      <div class="lm-actions">
+        <button class="ghost-btn" id="btnCancelLink">CANCEL</button>
+        <button class="primary-btn" id="btnSaveLink">ADD LINK</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/cars/catalog.js"></script>
+  <script src="sounds.js"></script>
+  <script src="newtab.js"></script>
+</body>
+</html>
